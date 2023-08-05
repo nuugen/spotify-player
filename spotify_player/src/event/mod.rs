@@ -69,6 +69,13 @@ pub enum ClientRequest {
     },
     #[cfg(feature = "streaming")]
     NewStreamingConnection,
+    CreatePlaylist {
+        playlist_name: String,
+        public: bool,
+        collab: bool,
+        desc: String,
+    },
+    DeletePlaylist(PlaylistId<'static>),
 }
 
 /// starts a terminal event handler (key pressed, mouse clicked, etc)

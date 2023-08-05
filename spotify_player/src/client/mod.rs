@@ -392,6 +392,25 @@ impl Client {
                 )
                 .await?;
             }
+            ClientRequest::CreatePlaylist {
+                playlist_name,
+                public,
+                collab,
+                desc,
+            } => {
+                let _ = self
+                    .create_new_playlist(
+                        playlist_name.as_str(),
+                        public,
+                        collab,
+                        desc.as_str(),
+                        state,
+                    )
+                    .await?;
+            }
+            ClientRequest::DeletePlaylist(playlist_id) => {
+                let _ = self.delete_playlist(playlist_id, state).await?;
+            }
         };
 
         tracing::info!(
@@ -1280,6 +1299,74 @@ impl Client {
         Self::notify_new_track(track, &path, state)?;
 
         Ok(())
+    }
+
+    pub async fn create_new_playlist(
+        &self,
+        playlist_name: &str,
+        public: bool,
+        collab: bool,
+        desc: &str,
+        state: &SharedState,
+    ) -> Result<String> {
+        let user_id = state
+            .data
+            .read()
+            .user_data
+            .user
+            .to_owned()
+            .context("Current user not found.")?
+            .id;
+        let resp = self
+            .spotify
+            .user_playlist_create(
+                user_id,
+                playlist_name,
+                Some(public),
+                Some(collab),
+                Some(desc),
+            )
+            .await?;
+        Ok(format!(
+            "Playlist '{}' with id '{}' was created.",
+            resp.name,
+            resp.id.id()
+        ))
+    }
+
+    pub async fn delete_playlist(
+        &self,
+        playlist_id: PlaylistId<'_>,
+        state: &SharedState,
+    ) -> Result<String> {
+        let user_id = state
+            .data
+            .read()
+            .user_data
+            .user
+            .to_owned()
+            .context("Current user not found.")?
+            .id;
+
+        let following = self
+            .spotify
+            .playlist_check_follow(playlist_id.to_owned(), &[user_id])
+            .await
+            .context(format!("Could not find playlist '{}'", playlist_id.id()))?
+            .pop()
+            .unwrap();
+
+        // Won't delete if not following
+        if following {
+            self.spotify
+                .playlist_unfollow(playlist_id.to_owned())
+                .await?;
+            Ok(format!("Playlist '{playlist_id}' was deleted/unfollowed"))
+        } else {
+            Ok(format!(
+                "Playlist '{playlist_id}' was not followed by the user, nothing to be done.",
+            ))
+        }
     }
 
     #[cfg(feature = "notify")]
