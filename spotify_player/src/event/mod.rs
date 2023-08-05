@@ -49,6 +49,7 @@ pub enum ClientRequest {
     Search(String),
     AddTrackToQueue(TrackId<'static>),
     AddTrackToPlaylist(PlaylistId<'static>, TrackId<'static>),
+    CreateUserPlaylist(String, String),
     DeleteTrackFromPlaylist(PlaylistId<'static>, TrackId<'static>),
     ReorderPlaylistItems {
         playlist_id: PlaylistId<'static>,
@@ -151,7 +152,9 @@ fn handle_key_event(
         // no popup
         let page_type = state.ui.lock().current_page().page_type();
         match page_type {
-            PageType::Library => page::handle_key_sequence_for_library_page(&key_sequence, state)?,
+            PageType::Library => {
+                page::handle_key_sequence_for_library_page(&key_sequence, client_pub, state)?
+            }
             PageType::Search => {
                 page::handle_key_sequence_for_search_page(&key_sequence, client_pub, state)?
             }

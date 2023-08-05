@@ -366,6 +366,18 @@ impl Client {
             ClientRequest::AddToLibrary(item) => {
                 self.add_to_library(state, item).await?;
             }
+            ClientRequest::CreateUserPlaylist(name, description) => {
+                let user = self.spotify.current_user().await?;
+                self.spotify
+                    .user_playlist_create(
+                        user.id,
+                        &name,
+                        Some(false),
+                        Some(false),
+                        Some(&description),
+                    )
+                    .await?;
+            }
             ClientRequest::DeleteFromLibrary(id) => {
                 self.delete_from_library(state, id).await?;
             }
