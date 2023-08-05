@@ -44,6 +44,7 @@ pub(super) use handle_navigation_commands_for_page;
 
 pub fn handle_key_sequence_for_library_page(
     key_sequence: &KeySequence,
+    client_pub: &flume::Sender<ClientRequest>,
     state: &SharedState,
 ) -> Result<bool> {
     let command = match state
@@ -72,6 +73,7 @@ pub fn handle_key_sequence_for_library_page(
             match focus_state {
                 LibraryFocusState::Playlists => window::handle_command_for_playlist_list_window(
                     command,
+                    client_pub,
                     ui.search_filtered_items(&data.user_data.playlists),
                     &data,
                     ui,
@@ -180,7 +182,9 @@ pub fn handle_key_sequence_for_search_page(
             let playlists = search_results
                 .map(|s| s.playlists.iter().collect())
                 .unwrap_or_default();
-            window::handle_command_for_playlist_list_window(command, playlists, &data, ui, state)
+            window::handle_command_for_playlist_list_window(
+                command, client_pub, playlists, &data, ui, state,
+            )
         }
     }
 }

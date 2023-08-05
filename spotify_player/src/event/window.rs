@@ -377,6 +377,7 @@ pub fn handle_command_for_album_list_window(
 
 pub fn handle_command_for_playlist_list_window(
     command: Command,
+    client_pub: &flume::Sender<ClientRequest>,
     playlists: Vec<&Playlist>,
     data: &DataReadGuard,
     mut ui: UIStateGuard,
@@ -422,6 +423,12 @@ pub fn handle_command_for_playlist_list_window(
                 ActionListItem::Playlist(playlists[id].clone(), actions),
                 new_list_state(),
             ));
+        }
+        Command::CreateNewPlaylist => {
+            client_pub.send(ClientRequest::CreateUserPlaylist(
+                "test playlist".into(),
+                "test desc".into(),
+            ))?;
         }
         _ => return Ok(false),
     }
